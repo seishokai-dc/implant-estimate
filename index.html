@@ -350,16 +350,26 @@
     letter-spacing:.03em;transform:rotate(-8deg);line-height:1.05;text-align:center;
   }
 
-  /* 印刷 (見積書モードのみ) — A4 1枚固定 */
+  /* 印刷 (見積書モードのみ) — A4 1枚固定
+     Chrome / Safari / Firefox すべて対応 */
   @media print{
-    /* A4サイズ・余白ゼロ (要素側でpaddingを持つ) */
-    @page{size:A4;margin:0}
-    /* 全体をリセット */
+    /* A4サイズ・余白ゼロ (Safariもmargin:0を尊重するように明示) */
+    @page{
+      size:A4 portrait;
+      margin:0mm;
+      padding:0mm;
+    }
+    /* 全体をリセット (Safari対策で高さ調整)
+       Safariは@page margin:0を無視して余白を入れることがあるため
+       コンテンツ側で明確に小さく確保する */
     html,body{
       background:#fff !important;
       padding:0 !important; margin:0 !important;
-      width:210mm; height:297mm;
-      overflow:hidden;
+      width:210mm !important; height:295mm !important;
+      max-height:295mm !important;
+      overflow:hidden !important;
+      -webkit-print-color-adjust:exact !important;
+      print-color-adjust:exact !important;
     }
     /* 入力モードとツールバーは完全に消す */
     #input-mode,.preview-toolbar{display:none !important}
@@ -367,23 +377,32 @@
     #preview-mode{
       display:block !important; max-width:none !important;
       margin:0 !important; padding:0 !important;
-      width:210mm; height:297mm;
-      overflow:hidden;
+      width:210mm !important; height:295mm !important;
+      max-height:295mm !important;
+      overflow:hidden !important;
+      page-break-after:avoid !important;
+      break-after:avoid !important;
+      position:relative !important;
     }
-    /* 見積書シート本体 — 密度モードのpaddingを尊重、
-       heightは297mm固定、overflow:hiddenで抑える
-       iPad縦画面用のtransform:scale(0.75)を印刷時は打ち消す */
+    /* 見積書シート本体 — A4 1枚固定
+       Safari対策: height=285mm (Safariの安全マージンを避ける)
+       上下に印刷用の追加マージンを入れて、上部の切れを防ぐ */
     .quote-sheet{
       border:none !important; box-shadow:none !important;
-      margin:0 !important;
-      width:210mm; height:297mm;
+      margin:6mm 0 0 0 !important;
+      width:210mm !important; height:285mm !important;
+      min-height:0 !important;
+      max-height:285mm !important;
       overflow:hidden !important;
       transform:none !important;
       transform-origin:top left !important;
       page-break-after:avoid !important;
       page-break-before:avoid !important;
       page-break-inside:avoid !important;
+      break-after:avoid !important;
+      break-before:avoid !important;
       break-inside:avoid !important;
+      position:relative !important;
     }
     /* 各セクション内での改ページを禁止 */
     .qs-header,.qs-to,.qs-intro,.qs-summary,.qs-monthly,
@@ -394,6 +413,8 @@
     .qs-table tr{page-break-inside:avoid;break-inside:avoid}
     /* body直下に空要素が生まれるのを防ぐ */
     body > *:not(#preview-mode){display:none !important}
+    /* 最終要素の余白がページ溢れを起こさないように */
+    .quote-sheet > *:last-child{margin-bottom:0 !important;padding-bottom:0 !important}
   }
 </style>
 </head>
