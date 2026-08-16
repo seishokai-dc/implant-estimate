@@ -359,14 +359,14 @@
       margin:0mm;
       padding:0mm;
     }
-    /* 全体をリセット (Safari対策で高さ調整)
+    /* 全体をリセット (Safari対策で高さ290mmまで縮小)
        Safariは@page margin:0を無視して余白を入れることがあるため
        コンテンツ側で明確に小さく確保する */
     html,body{
       background:#fff !important;
       padding:0 !important; margin:0 !important;
-      width:210mm !important; height:295mm !important;
-      max-height:295mm !important;
+      width:210mm !important; height:290mm !important;
+      max-height:290mm !important;
       overflow:hidden !important;
       -webkit-print-color-adjust:exact !important;
       print-color-adjust:exact !important;
@@ -377,22 +377,22 @@
     #preview-mode{
       display:block !important; max-width:none !important;
       margin:0 !important; padding:0 !important;
-      width:210mm !important; height:295mm !important;
-      max-height:295mm !important;
+      width:210mm !important; height:290mm !important;
+      max-height:290mm !important;
       overflow:hidden !important;
       page-break-after:avoid !important;
       break-after:avoid !important;
       position:relative !important;
     }
     /* 見積書シート本体 — A4 1枚固定
-       Safari対策: height=285mm (Safariの安全マージンを避ける)
-       上下に印刷用の追加マージンを入れて、上部の切れを防ぐ */
+       Safari対策: height=290mm (297mmだと確実に溢れる)
+       Chromeなら余裕、Safariなら安全マージン内に収まる */
     .quote-sheet{
       border:none !important; box-shadow:none !important;
-      margin:6mm 0 0 0 !important;
-      width:210mm !important; height:285mm !important;
+      margin:0 !important;
+      width:210mm !important; height:290mm !important;
       min-height:0 !important;
-      max-height:285mm !important;
+      max-height:290mm !important;
       overflow:hidden !important;
       transform:none !important;
       transform-origin:top left !important;
