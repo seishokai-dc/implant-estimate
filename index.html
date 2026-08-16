@@ -129,8 +129,8 @@
     position:sticky;top:0;z-index:10;flex-wrap:wrap;
   }
   .preview-toolbar button{flex:0 0 auto;padding:8px 16px}
-  /* A4見積書は縮小してiPad縦でも見切れないように */
-  @media (max-width: 900px) {
+  /* A4見積書は縮小してiPad縦でも見切れないように (画面表示のみ) */
+  @media screen and (max-width: 900px) {
     #preview-mode{max-width:100%}
     .quote-sheet{transform-origin:top left;transform:scale(0.75);
                  margin-bottom:calc(280mm * -0.25)}
@@ -371,12 +371,15 @@
       overflow:hidden;
     }
     /* 見積書シート本体 — 密度モードのpaddingを尊重、
-       heightは297mm固定、overflow:hiddenで抑える */
+       heightは297mm固定、overflow:hiddenで抑える
+       iPad縦画面用のtransform:scale(0.75)を印刷時は打ち消す */
     .quote-sheet{
       border:none !important; box-shadow:none !important;
       margin:0 !important;
       width:210mm; height:297mm;
       overflow:hidden !important;
+      transform:none !important;
+      transform-origin:top left !important;
       page-break-after:avoid !important;
       page-break-before:avoid !important;
       page-break-inside:avoid !important;
