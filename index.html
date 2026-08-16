@@ -423,8 +423,8 @@
           </select>
         </label>
         <label style="font-size:12px;flex:1;min-width:150px">
-          <span style="color:var(--sub);font-size:11px">カウンセラー / 担当医</span>
-          <input class="patient-input" id="counselor-name" placeholder="例: 田中 (TC) / 野村DR">
+          <span style="color:var(--sub);font-size:11px">担当医</span>
+          <input class="patient-input" id="counselor-name" placeholder="例: 野村DR">
         </label>
       </div>
       <input class="patient-input" id="patient-name"  placeholder="患者氏名">
@@ -524,7 +524,7 @@
     <div class="qs-header">
       <div>
         <div class="qs-title">御 見 積 書</div>
-        <div class="qs-subtitle">Estimation of Dental Implant Treatment</div>
+        <div class="qs-subtitle">Estimation of Dental Implant Treatment ／ <span id="p-clinic-name">秋葉原院</span></div>
       </div>
       <div class="qs-meta">
         <div id="p-plan-badge" class="plan-badge" style="display:none">
@@ -609,15 +609,11 @@
       </div>
     </div>
 
-    <!-- 署名欄 -->
+    <!-- 署名欄 (担当医サイン ／ 患者様同意サイン の2欄) -->
     <div class="qs-sign">
       <div class="box">
         <div class="lbl">担当医サイン</div>
-        <div class="line">Doctor</div>
-      </div>
-      <div class="box">
-        <div class="lbl">カウンセラー / 説明担当</div>
-        <div class="line" id="p-counselor-line">TC</div>
+        <div class="line" id="p-counselor-line">Doctor</div>
       </div>
       <div class="box">
         <div class="lbl">患者様同意サイン</div>
@@ -625,21 +621,37 @@
       </div>
     </div>
 
-    <!-- 医院情報 (ロゴ・住所なし。3院運営＋理事長名のみ) -->
-    <div class="qs-clinic">
-      <div>
-        <div class="name">医療法人社団聖匠会</div>
-        <div class="addr">
-          秋葉原院 ／ 末広町院 ／ 小伝馬町院<br>
-          発行院: <span id="p-clinic-name">秋葉原院</span>　／　理事長 野村 聖一 (歯科医師)
-        </div>
-      </div>
-      <div class="stamp">聖匠会<br>院印</div>
-    </div>
+    <!-- 医院情報ブロックは削除。発行院はタイトル横に表示。 -->
   </div>
 </div>
 
 <script>
+  // ==================================================================
+  // ★ 設定エリア (変更時はここだけ書き換えればOK)
+  // ==================================================================
+
+  // デンタルローン金利 (％) — 改定時にここを書き換える
+  const LOAN_RATE = 3.9;
+
+  // 支払方法の記載文言
+  const PAYMENT_METHODS = '現金・クレジットカード各種／キャッシュレス決済各種／デンタルローン(最大84回)対応';
+
+  // 医療費控除の案内文
+  const TAX_NOTE = 'インプラント治療は医療費控除の対象となります。領収書は大切に保管ください。';
+
+  // 院マスタ (3院・院名のみ。住所・ロゴは記載しない方針)
+  const CLINICS = {
+    akihabara:  { name: '秋葉原院'   },
+    suehirocho: { name: '末広町院'   },
+    kodenmacho: { name: '小伝馬町院' },
+  };
+
+  // LocalStorage キー
+  const STORAGE = 'implant_master_csv_v7';
+  const STORAGE_CLINIC = 'implant_selected_clinic_v1';
+  const STORAGE_COUNSELOR = 'implant_selected_counselor_v1';
+  // ==================================================================
+
   // ---- 日付・見積番号 ----
   const today = new Date();
   const ymd = today.getFullYear()+'年'+(today.getMonth()+1)+'月'+today.getDate()+'日';
@@ -678,31 +690,6 @@
     if(savedCn) cn.value = savedCn;
     cn.addEventListener('change', () => localStorage.setItem(STORAGE_COUNSELOR, cn.value));
   })();
-
-  // ==================================================================
-  // ★ 設定エリア (変更時はここだけ書き換えればOK)
-  // ==================================================================
-
-  // デンタルローン金利 (％) — 改定時にここを書き換える
-  const LOAN_RATE = 3.9;
-
-  // 支払方法の記載文言
-  const PAYMENT_METHODS = '現金・クレジットカード各種／デンタルローン(最大84回・金利'+LOAN_RATE+'%※変動あり)対応';
-
-  // 医療費控除の案内文
-  const TAX_NOTE = 'インプラント治療は医療費控除の対象となります。領収書は大切に保管ください。';
-
-  // 院マスタ (3院・院名のみ。住所・ロゴは記載しない方針)
-  const CLINICS = {
-    akihabara:  { name: '秋葉原院'   },
-    suehirocho: { name: '末広町院'   },
-    kodenmacho: { name: '小伝馬町院' },
-  };
-  // ==================================================================
-
-  const STORAGE = 'implant_master_csv_v7';
-  const STORAGE_CLINIC = 'implant_selected_clinic_v1';
-  const STORAGE_COUNSELOR = 'implant_selected_counselor_v1';
 
   // ---- ローン月額計算 (元利均等・年利%) ----
   // r=0のときは単純割り。100円単位で切り上げ表示。
@@ -1053,7 +1040,7 @@
     // カテゴリ短縮名
     const catShort = {
       '1.検査診断':'検査', '2.手術':'手術', '3.フィクスチャー':'FIX',
-      '4.アバットメント':'アバット', '5.上部構造':'上部',
+      '4.アバットメント':'アバットメント', '5.上部構造':'上部',
       '6.オプション':'オプション', '7.外科オプション':'外科'
     };
 
