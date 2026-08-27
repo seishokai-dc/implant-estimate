@@ -1112,11 +1112,8 @@
 
     // 保証なし注意事項の表示切替 (Plan1選択時のみ表示)
     const warrantyNote = document.getElementById('p-warranty-note');
-    if(plan && plan.hasWarranty === false){
-      warrantyNote.style.display = 'list-item';
-    } else {
-      warrantyNote.style.display = 'none';
-    }
+    const hasAnyWarranty = items.some(i => i.cat === '8.保証');
+    warrantyNote.style.display = hasAnyWarranty ? 'none' : 'list-item';
 
     document.getElementById('input-mode').style.display='none';
     document.getElementById('preview-mode').style.display='block';
@@ -1145,7 +1142,7 @@
     try{
       // キャッシュバスター: URLに?v=YYYYMMDDHHをつけて日次で自動更新
       // (ブラウザキャッシュに引きずられないようにする)
-      const bust = new Date().toISOString().slice(0,13).replace(/[-:T]/g,'');
+      const bust = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
       const res = await fetch('implant_price_master.csv?v=' + bust);
       if(!res.ok) throw new Error('HTTP '+res.status);
       const text = await res.text();
