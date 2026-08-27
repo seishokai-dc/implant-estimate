@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="聖匠会見積">
+<meta name="format-detection" content="telephone=no">
+<title>インプラント治療 お見積書</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --sub:#666; --line:#d0d0d0;
+    --bg:#f7f7f5; --accent:#0b4f6c; --hit:#e6f2f5;
+    --paper:#fff;
+  }
+  *{box-sizing:border-box}
+  html,body{-webkit-text-size-adjust:100%}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    color:var(--ink);background:var(--bg);margin:0;padding:20px;
+    font-size:13px;line-height:1.5;
+    -webkit-tap-highlight-color:transparent;
+  }
+  /* ========== 入力モード ========== */
+  #input-mode .app{max-width:1100px;margin:0 auto;
+       display:grid;grid-template-columns:1fr 340px;gap:18px}
+
+  /* ========== iPad縦画面 (〜900px) / スマホ・レスポンシブ ========== */
+  @media (max-width: 900px) {
+    body{padding:12px;font-size:15px}
+    #input-mode .app{grid-template-columns:1fr;gap:12px}
+    header.top{flex-wrap:wrap;gap:6px}
+    header.top h1{font-size:18px}
+    .card{padding:14px}
+    .card h2{font-size:16px}
+    /* 集計欄は下側に配置し、通常スクロール */
+    .side{position:static}
+    .total-box{position:sticky;bottom:0;z-index:10;
+               box-shadow:0 -3px 12px rgba(0,0,0,.08)}
+    /* タッチ操作のため入力要素を大きく */
+    .row{padding:10px 4px}
+    .row label{font-size:15px;gap:12px}
+    .row input[type=checkbox],.row input[type=radio]{
+      width:22px;height:22px;
+    }
+    input.qty{width:64px;padding:8px;font-size:15px;min-height:38px}
+    .patient-input{padding:10px;font-size:15px;min-height:40px}
+    button{padding:14px;font-size:14px;min-height:44px}
+    .btn-set{padding:14px 12px}
+    .btn-set .set-name{font-size:15px}
+    .btn-set .set-price{font-size:15px}
+    /* 折りたたみ表示 */
+    .breakdown-list{max-height:180px}
+    /* プラン警告UIを目立たせる */
+    #plan1-warning{font-size:13px}
+  }
+
+  /* さらに狭い(スマホ縦) — 補助 */
+  @media (max-width: 480px) {
+    body{padding:8px}
+    header.top h1{font-size:16px}
+    .row .price{min-width:110px;font-size:13px}
+  }
+  header.top{grid-column:1/-1;
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:2px solid var(--accent);padding-bottom:8px;margin-bottom:4px}
+  header.top h1{margin:0;font-size:20px;color:var(--accent)}
+  header.top .meta{font-size:12px;color:var(--sub);text-align:right}
+  .card{background:#fff;border:1px solid var(--line);border-radius:8px;
+        padding:12px 14px;margin-bottom:12px}
+  .card h2{margin:0 0 8px;font-size:14px;color:var(--accent);
+           border-left:4px solid var(--accent);padding-left:8px}
+  .row{display:flex;align-items:center;justify-content:space-between;
+       padding:5px 4px;border-bottom:1px dashed #eee;gap:8px}
+  .row:last-child{border-bottom:none}
+  .row label{display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;flex-wrap:wrap}
+  .row input[type=checkbox],.row input[type=radio]{
+    width:17px;height:17px;accent-color:var(--accent);cursor:pointer}
+  .row .price{font-variant-numeric:tabular-nums;color:#333;
+              min-width:150px;text-align:right;white-space:nowrap}
+  .row.hit{background:var(--hit);border-radius:4px}
+  input.qty{width:52px;padding:3px 6px;border:1px solid var(--line);
+            border-radius:4px;text-align:right}
+  .side{position:sticky;top:20px;align-self:start}
+  .total-box{background:#fff;border:2px solid var(--accent);border-radius:10px;padding:14px}
+  .total-box h3{margin:0 0 8px;font-size:14px;color:var(--accent)}
+  .total-line{display:flex;justify-content:space-between;padding:3px 0}
+  .total-line.grand{border-top:2px solid var(--accent);margin-top:6px;
+                    padding-top:8px;font-size:20px;font-weight:bold;color:var(--accent)}
+  .monthly{font-size:11px;color:var(--sub);text-align:right;margin-top:2px}
+  .actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  button{flex:1;padding:9px;border:none;border-radius:6px;font-size:12px;
+         cursor:pointer;font-weight:bold}
+  .btn-print{background:var(--accent);color:#fff}
+  .btn-print:hover{opacity:.9}
+  .btn-preview{background:#8a6d18;color:#fff}
+  .btn-load{background:#f5deb3;color:#5a4a1a}
+  .btn-reset{background:#eee;color:#333}
+  /* セットリスト用ボタン (縦並び) */
+  .btn-set{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 12px;border-radius:6px;
+    border:2px solid transparent;cursor:pointer;font-weight:bold;
+    transition:all .15s;text-align:left;
+  }
+  .btn-set .set-name{font-size:13px}
+  .btn-set .set-price{font-size:13px;font-variant-numeric:tabular-nums}
+  .btn-set-1{background:#f0f7f9;color:#0b4f6c;border-color:#0b4f6c}
+  .btn-set-2{background:#fff5e0;color:#8a6d18;border-color:#c9a545}
+  .btn-set-3{background:linear-gradient(135deg,#2d3e50,#0b4f6c);color:#fff;border-color:#0b4f6c}
+  .btn-set:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.15)}
+  .btn-set.active{outline:3px solid #c9a545;outline-offset:2px}
+  .patient-input{width:100%;padding:6px 8px;margin:3px 0;
+    border:1px solid var(--line);border-radius:4px;font-size:13px}
+  .warn{font-size:11px;color:#b00;margin-top:6px}
+  .breakdown-list{list-style:none;padding:0;margin:0;font-size:12px;
+                  max-height:280px;overflow:auto}
+  .breakdown-list li{display:flex;justify-content:space-between;
+                     padding:3px 0;border-bottom:1px dotted #eee;gap:8px}
+  .breakdown-list .val{white-space:nowrap;font-variant-numeric:tabular-nums}
+  #loader-status{font-size:11px;color:var(--sub);margin-top:6px;text-align:center}
+  .empty-msg{padding:20px;text-align:center;color:#999;font-size:13px}
+
+  /* ========== 見積書プレビュー(印刷用フォーマット) ========== */
+  #preview-mode{display:none;max-width:900px;margin:0 auto}
+  .preview-toolbar{
+    display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end;align-items:center;
+    background:#fff;padding:10px;border-radius:6px;border:1px solid var(--line);
+    position:sticky;top:0;z-index:10;flex-wrap:wrap;
+  }
+  .preview-toolbar button{flex:0 0 auto;padding:8px 16px}
+  /* A4見積書は縮小してiPad縦でも見切れないように (画面表示のみ) */
+  @media screen and (max-width: 900px) {
+    #preview-mode{max-width:100%}
+    .quote-sheet{transform-origin:top left;transform:scale(0.75);
+                 margin-bottom:calc(280mm * -0.25)}
+    .preview-toolbar{padding:8px}
+    .preview-toolbar button{padding:12px 18px;min-height:44px;font-size:14px}
+  }
+
+  /* ===================================================
+     A4 1枚見積書 — 項目数連動 自動フィット設計
+     モード切替 (JSで .quote-sheet に data-density を付与):
+       spacious (〜7項目)  ゆったり
+       normal   (8〜11項目) 中間
+       compact  (12項目〜)  ぎっしり
+     全サイズをCSS変数で駆動
+     =================================================== */
+  .quote-sheet{
+    /* --- デフォルト = normal --- */
+    --base-fs:9.5pt;
+    --line-h:1.4;
+    --pad-v:9mm;
+    --pad-h:11mm;
+    --gap:5px;
+    --title-fs:19pt;
+    --meta-fs:8.5pt;
+    --to-fs:13pt;
+    --to-meta-fs:8.5pt;
+    --intro-fs:9.5pt;
+    --sum-pad:8px 15px;
+    --sum-lbl-fs:10.5pt;
+    --sum-amt-fs:22pt;
+    --tbl-fs:9pt;
+    --tbl-pad:3px 7px;
+    --tbl-head-fs:9pt;
+    --tbl-foot-fs:11pt;
+    --notes-fs:8pt;
+    --notes-pad:5px 9px;
+    --pay-fs:8pt;
+    --sign-h:46px;
+    --clinic-fs:8pt;
+    --stamp-sz:46px;
+
+    background:var(--paper);color:#111;
+    padding:var(--pad-v) var(--pad-h);
+    border:1px solid #ccc;
+    box-shadow:0 4px 20px rgba(0,0,0,.08);
+    font-size:var(--base-fs);line-height:var(--line-h);
+    width:210mm;min-height:280mm;margin:0 auto;
+    display:flex;flex-direction:column;
+    overflow:hidden;
+  }
+
+  /* --- spacious: 少項目のときは大きく・ゆったり --- */
+  .quote-sheet[data-density="spacious"]{
+    --base-fs:11pt;
+    --line-h:1.55;
+    --pad-v:14mm;
+    --pad-h:14mm;
+    --gap:9px;
+    --title-fs:22pt;
+    --meta-fs:9.5pt;
+    --to-fs:15pt;
+    --to-meta-fs:9.5pt;
+    --intro-fs:10.5pt;
+    --sum-pad:14px 20px;
+    --sum-lbl-fs:12pt;
+    --sum-amt-fs:26pt;
+    --tbl-fs:10.5pt;
+    --tbl-pad:6px 10px;
+    --tbl-head-fs:10.5pt;
+    --tbl-foot-fs:13pt;
+    --notes-fs:9pt;
+    --notes-pad:8px 12px;
+    --pay-fs:9pt;
+    --sign-h:60px;
+    --clinic-fs:9pt;
+    --stamp-sz:56px;
+  }
+
+  /* --- compact: 多項目のときは詰めて確実に1枚に --- */
+  .quote-sheet[data-density="compact"]{
+    --base-fs:9pt;
+    --line-h:1.35;
+    --pad-v:7mm;
+    --pad-h:10mm;
+    --gap:4px;
+    --title-fs:18pt;
+    --meta-fs:8.5pt;
+    --to-fs:12pt;
+    --to-meta-fs:8pt;
+    --intro-fs:9pt;
+    --sum-pad:6px 14px;
+    --sum-lbl-fs:10pt;
+    --sum-amt-fs:20pt;
+    --tbl-fs:8.5pt;
+    --tbl-pad:2px 6px;
+    --tbl-head-fs:8.5pt;
+    --tbl-foot-fs:10.5pt;
+    --notes-fs:7.5pt;
+    --notes-pad:4px 8px;
+    --pay-fs:7.5pt;
+    --sign-h:42px;
+    --clinic-fs:7.5pt;
+    --stamp-sz:42px;
+  }
+
+  .qs-header{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:2px double var(--accent);
+    padding-bottom:calc(var(--gap) - 1px);margin-bottom:var(--gap);
+  }
+  .qs-title{font-size:var(--title-fs);font-weight:bold;color:var(--accent);
+            letter-spacing:.12em;margin:0;line-height:1.1}
+  .qs-subtitle{font-size:calc(var(--meta-fs) - 1pt);color:#666;margin-top:1px}
+  .qs-meta{text-align:right;font-size:var(--meta-fs);color:#333;line-height:1.35}
+  .qs-meta div{margin:0}
+  .qs-meta .qno{font-family:monospace;font-size:var(--meta-fs)}
+  .plan-badge{
+    display:inline-flex !important;align-items:center;gap:5px;
+    padding:3px 10px 3px 4px;margin-bottom:4px;
+    background:var(--accent);color:#fff;border-radius:20px;
+    font-weight:bold;
+  }
+  .plan-badge .plan-no{
+    background:#fff;color:var(--accent);
+    width:22px;height:22px;border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:12pt;line-height:1;
+  }
+  .plan-badge .plan-name{font-size:calc(var(--meta-fs) + 1pt);letter-spacing:.03em}
+
+  .qs-to{
+    margin:var(--gap) 0;padding:calc(var(--gap) - 2px) 10px;
+    background:#f7f7f2;border-left:3px solid var(--accent);
+  }
+  .qs-to .to-name{font-size:var(--to-fs);font-weight:bold;letter-spacing:.05em;line-height:1.2}
+  .qs-to .to-name::after{content:" 様";font-size:calc(var(--to-fs) - 3pt);font-weight:normal;color:#555}
+  .qs-to .to-meta{font-size:var(--to-meta-fs);color:#666;margin-top:1px}
+
+  .qs-intro{margin:2px 0 var(--gap);font-size:var(--intro-fs);line-height:var(--line-h)}
+
+  .qs-summary{
+    display:flex;justify-content:space-between;align-items:center;
+    background:linear-gradient(90deg, #f0f4f6, #fff);
+    border:1.5px solid var(--accent);border-radius:4px;
+    padding:var(--sum-pad);margin-bottom:2px;
+  }
+  .qs-summary .lbl{font-size:var(--sum-lbl-fs);color:#333;font-weight:bold}
+  .qs-summary .amt{
+    font-size:var(--sum-amt-fs);font-weight:bold;color:var(--accent);
+    font-variant-numeric:tabular-nums;letter-spacing:.02em;line-height:1;
+  }
+  .qs-summary .amt small{font-size:calc(var(--sum-amt-fs) * 0.42);font-weight:normal;color:#555;margin-left:3px}
+  .qs-monthly{font-size:var(--meta-fs);color:#555;text-align:right;margin:2px 2px var(--gap)}
+
+  .qs-table{width:100%;border-collapse:collapse;font-size:var(--tbl-fs);margin-bottom:var(--gap)}
+  .qs-table th, .qs-table td{
+    border:1px solid #666;padding:var(--tbl-pad);vertical-align:middle;
+  }
+  .qs-table thead th{
+    background:var(--accent);color:#fff;font-weight:bold;
+    text-align:center;font-size:var(--tbl-head-fs);
+  }
+  .qs-table td.cat{background:#f0f4f6;font-weight:bold;
+                   font-size:calc(var(--tbl-fs) - 0.5pt);color:#333;
+                   text-align:center;width:56px;white-space:nowrap}
+  .qs-table td.name{text-align:left}
+  .qs-table td.qty{text-align:center;width:56px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .qs-table td.unit-price{text-align:right;width:88px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .qs-table td.subtotal{text-align:right;width:96px;font-variant-numeric:tabular-nums;font-weight:bold;white-space:nowrap}
+  .qs-table tfoot td{
+    background:#fafafa;font-weight:bold;text-align:right;padding:var(--tbl-pad);
+  }
+  .qs-table tfoot .grand-row td{
+    background:var(--accent);color:#fff;font-size:var(--tbl-foot-fs);
+  }
+
+  .qs-notes{
+    margin:var(--gap) 0;padding:var(--notes-pad);
+    background:#fdfbf3;border:1px solid #e8d998;
+    font-size:var(--notes-fs);line-height:1.5;
+  }
+  .qs-notes .h{font-weight:bold;color:#8a6d18;margin-bottom:2px;
+               font-size:calc(var(--notes-fs) + 0.5pt)}
+  .qs-notes ul{margin:0;padding-left:16px}
+  .qs-notes li{margin:0}
+
+  .qs-payment{display:flex;gap:8px;margin:var(--gap) 0}
+  .qs-payment .box{
+    flex:1;padding:calc(var(--gap) - 1px) 10px;border:1px solid #bbb;border-radius:3px;
+    background:#fff;font-size:var(--pay-fs);line-height:1.45;
+  }
+  .qs-payment .box .h{font-weight:bold;color:var(--accent);
+                       font-size:calc(var(--pay-fs) + 0.5pt);margin-bottom:2px}
+
+  .qs-sign{display:flex;justify-content:space-between;gap:14px;margin-top:var(--gap)}
+  .qs-sign .box{
+    flex:1;border:1px solid #666;padding:4px 10px;height:var(--sign-h);
+    display:flex;flex-direction:column;
+  }
+  .qs-sign .box .lbl{font-size:var(--notes-fs);color:#555;margin-bottom:2px}
+  .qs-sign .box .line{margin-top:auto;border-top:1px dotted #999;padding-top:1px;
+                      font-size:calc(var(--notes-fs) - 0.5pt);color:#888;text-align:right}
+
+  .qs-clinic{
+    margin-top:var(--gap);padding-top:calc(var(--gap) - 1px);
+    border-top:1px solid #999;
+    display:flex;justify-content:space-between;align-items:flex-end;
+    font-size:var(--clinic-fs);color:#333;
+  }
+  .qs-clinic .name{font-weight:bold;
+                    font-size:calc(var(--clinic-fs) + 1pt);color:var(--accent)}
+  .qs-clinic .addr{color:#666;line-height:1.35}
+  .qs-clinic .stamp{
+    width:var(--stamp-sz);height:var(--stamp-sz);border:2px solid #c00;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:#c00;font-size:calc(var(--clinic-fs) - 0.5pt);font-weight:bold;
+    letter-spacing:.03em;transform:rotate(-8deg);line-height:1.05;text-align:center;
+  }
+
+  /* 印刷 (見積書モードのみ) — A4 1枚固定
+     Chrome / Safari / Firefox すべて対応 */
+  @media print{
+    /* A4サイズ・余白ゼロ (Safariもmargin:0を尊重するように明示) */
+    @page{
+      size:A4 portrait;
+      margin:0mm;
+      padding:0mm;
+    }
+    /* 全体をリセット (Safari対策で高さ290mmまで縮小)
+       Safariは@page margin:0を無視して余白を入れることがあるため
+       コンテンツ側で明確に小さく確保する */
+    html,body{
+      background:#fff !important;
+      padding:0 !important; margin:0 !important;
+      width:210mm !important; height:290mm !important;
+      max-height:290mm !important;
+      overflow:hidden !important;
+      -webkit-print-color-adjust:exact !important;
+      print-color-adjust:exact !important;
+    }
+    /* 入力モードとツールバーは完全に消す */
+    #input-mode,.preview-toolbar{display:none !important}
+    /* プレビューモード ラッパー */
+    #preview-mode{
+      display:block !important; max-width:none !important;
+      margin:0 !important; padding:0 !important;
+      width:210mm !important; height:290mm !important;
+      max-height:290mm !important;
+      overflow:hidden !important;
+      page-break-after:avoid !important;
+      break-after:avoid !important;
+      position:relative !important;
+    }
+    /* 見積書シート本体 — A4 1枚固定
+       Safari対策: height=290mm (297mmだと確実に溢れる)
+       Chromeなら余裕、Safariなら安全マージン内に収まる */
+    .quote-sheet{
+      border:none !important; box-shadow:none !important;
+      margin:0 !important;
+      width:210mm !important; height:290mm !important;
+      min-height:0 !important;
+      max-height:290mm !important;
+      overflow:hidden !important;
+      transform:none !important;
+      transform-origin:top left !important;
+      page-break-after:avoid !important;
+      page-break-before:avoid !important;
+      page-break-inside:avoid !important;
+      break-after:avoid !important;
+      break-before:avoid !important;
+      break-inside:avoid !important;
+      position:relative !important;
+    }
+    /* 各セクション内での改ページを禁止 */
+    .qs-header,.qs-to,.qs-intro,.qs-summary,.qs-monthly,
+    .qs-table,.qs-notes,.qs-payment,.qs-sign,.qs-clinic{
+      page-break-inside:avoid;
+      break-inside:avoid;
+    }
+    .qs-table tr{page-break-inside:avoid;break-inside:avoid}
+    /* body直下に空要素が生まれるのを防ぐ */
+    body > *:not(#preview-mode){display:none !important}
+    /* 最終要素の余白がページ溢れを起こさないように */
+    .quote-sheet > *:last-child{margin-bottom:0 !important;padding-bottom:0 !important}
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== 入力モード ========== -->
+<div id="input-mode">
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>インプラント治療 お見積書</h1>
+      <div style="font-size:12px;color:var(--sub)">医療法人社団聖匠会 ｜ 全て自費・税込表示</div>
+    </div>
+    <div class="meta">
+      発行日: <span id="today"></span><br>
+      No. <span id="quote-no"></span>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>患者情報 ／ 発行情報</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+        <label style="font-size:12px;flex:1;min-width:150px">
+          <span style="color:var(--sub);font-size:11px">発行院</span>
+          <select class="patient-input" id="clinic-select" style="cursor:pointer">
+            <option value="akihabara">秋葉原院</option>
+            <option value="suehirocho">末広町院</option>
+            <option value="kodenmacho">小伝馬町院</option>
+          </select>
+        </label>
+        <label style="font-size:12px;flex:1;min-width:150px">
+          <span style="color:var(--sub);font-size:11px">担当医</span>
+          <input class="patient-input" id="counselor-name" placeholder="例: 野村DR">
+        </label>
+      </div>
+      <input class="patient-input" id="patient-name"  placeholder="患者氏名">
+      <input class="patient-input" id="patient-chart" placeholder="カルテ番号 (任意)">
+      <input class="patient-input" id="patient-tooth" placeholder="対象部位 (例: #46 #26 の2本)">
+    </div>
+
+    <div id="categories">
+      <div class="empty-msg">
+        右上の<b>「料金表を読込」</b>ボタンから<br>
+        <code>implant_price_master.csv</code> を選択してください
+      </div>
+    </div>
+  </main>
+
+  <aside class="side">
+    <div class="total-box">
+      <h3>お見積合計</h3>
+      <ul class="breakdown-list" id="breakdown">
+        <li style="color:#999">項目を選択してください</li>
+      </ul>
+      <div class="total-line grand">
+        <span>合計 (税込)</span>
+        <span id="grand-total">¥0</span>
+      </div>
+      <div class="monthly" id="monthly-hint"></div>
+
+      <div class="actions">
+        <button class="btn-load" onclick="document.getElementById('csv-input').click()">料金表を読込</button>
+        <input type="file" id="csv-input" accept=".csv" style="display:none">
+      </div>
+      <div class="actions">
+        <button class="btn-preview" onclick="openPreview()">見積書プレビュー</button>
+      </div>
+      <div class="actions">
+        <button class="btn-reset" onclick="resetAll()">リセット</button>
+      </div>
+
+      <!-- ===== セットリスト (患者提示用の推奨プラン) ===== -->
+      <div style="margin-top:12px;padding-top:8px;border-top:2px solid var(--accent)">
+        <div style="font-size:12px;color:var(--accent);text-align:center;margin-bottom:6px;font-weight:bold">
+          ◆ セットリスト (1本埋入・推奨プラン)
+        </div>
+        <div class="actions" style="margin-top:4px;flex-direction:column;gap:4px">
+          <button class="btn-set btn-set-1" onclick="applySet('S1')">
+            <span class="set-name">ライト+α<span style="font-size:10px;font-weight:normal;opacity:.75">　ガイド標準/保証なし</span></span>
+            <span class="set-price">¥429,000</span>
+          </button>
+          <button class="btn-set btn-set-2" onclick="applySet('S2')">
+            <span class="set-name">スタンダード<span style="font-size:10px;font-weight:normal;opacity:.75">　ガイド標準/2年保証</span></span>
+            <span class="set-price">¥484,000</span>
+          </button>
+          <button class="btn-set btn-set-3" onclick="applySet('S3')">
+            <span class="set-name">プレミアム<span style="font-size:10px;font-weight:normal;opacity:.85">　ガイド標準/2年保証</span></span>
+            <span class="set-price">¥602,800</span>
+          </button>
+        </div>
+        <div style="font-size:10px;color:var(--sub);text-align:center;margin-top:4px;line-height:1.4">
+          2次手術・10年保証・鎮静などは必要に応じて個別選択<br>
+          セット適用後の個別調整OK
+        </div>
+      </div>
+
+
+
+      <!-- Plan1選択時の同意注意 -->
+      <div id="plan1-warning" style="display:none;margin-top:8px;padding:8px 10px;
+           background:#fff3f3;border:1.5px solid #d55;border-radius:6px;font-size:11px;color:#b00;line-height:1.45">
+        <b>⚠ 保証なしプラン選択中</b><br>
+        患者様への口頭説明＋同意サインを見積書上で必ず取得してください。
+        インプラント体・上部構造の脱離・破損時の費用は全額患者負担となる旨を明示。
+      </div>
+
+
+
+      <div id="loader-status">料金表: 未読込</div>
+      <p style="font-size:11px;color:var(--sub);margin-top:8px;line-height:1.4">
+        「見積書プレビュー」→ 内容確認 → PDFに保存 で正式見積書が出力できます。
+      </p>
+    </div>
+  </aside>
+</div>
+</div>
+
+<!-- ========== 見積書プレビューモード(印刷対象) ========== -->
+<div id="preview-mode">
+  <div class="preview-toolbar">
+    <div style="flex:1;font-size:11px;color:#b00;line-height:1.4">
+      ⚠ 印刷ダイアログで<b>「ヘッダとフッタ」= OFF</b>、<b>拡大率=100%</b>、<b>余白=なし</b> を確認してください
+    </div>
+    <button class="btn-reset" onclick="closePreview()">← 入力に戻る</button>
+    <button class="btn-print" onclick="window.print()">印刷 / PDF保存</button>
+  </div>
+
+  <div class="quote-sheet" id="quote-sheet">
+    <!-- ヘッダー -->
+    <div class="qs-header">
+      <div>
+        <div class="qs-title">御 見 積 書</div>
+        <div class="qs-subtitle">Estimation of Dental Implant Treatment ／ <span id="p-clinic-name">秋葉原院</span></div>
+      </div>
+      <div class="qs-meta">
+        <div id="p-plan-badge" class="plan-badge" style="display:none">
+          <span class="plan-no" id="p-plan-no">1</span>
+          <span class="plan-name" id="p-plan-name">ライト+α</span>
+        </div>
+        <div class="qno">No. <span id="p-quote-no"></span></div>
+        <div>発行日: <span id="p-today"></span></div>
+        <div>有効期限: <span id="p-expiry"></span></div>
+      </div>
+    </div>
+
+    <!-- 宛先 -->
+    <div class="qs-to">
+      <div class="to-name"><span id="p-patient-name">　　　　　　　</span></div>
+      <div class="to-meta">
+        カルテ番号: <span id="p-patient-chart">－</span>　／　
+        対象部位: <span id="p-patient-tooth">－</span>
+      </div>
+    </div>
+
+    <!-- 冒頭文 -->
+    <div class="qs-intro">
+      この度は当院インプラント治療をご検討いただき、誠にありがとうございます。<br>
+      下記の通りお見積り申し上げます。ご不明点は担当医までお気軽にご相談ください。
+    </div>
+
+    <!-- 合計サマリー -->
+    <div class="qs-summary">
+      <div class="lbl">お見積合計金額</div>
+      <div class="amt">¥<span id="p-total">0</span><small>(税込)</small></div>
+    </div>
+    <div class="qs-monthly" id="p-monthly"></div>
+
+    <!-- 明細表 -->
+    <table class="qs-table">
+      <thead>
+        <tr>
+          <th>区分</th>
+          <th>項目</th>
+          <th>数量</th>
+          <th>単価</th>
+          <th>金額</th>
+        </tr>
+      </thead>
+      <tbody id="p-tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4">小計 (税込)</td>
+          <td style="text-align:right"><span id="p-subtotal">¥0</span></td>
+        </tr>
+        <tr class="grand-row">
+          <td colspan="4">合計 (税込)</td>
+          <td style="text-align:right"><span id="p-grand">¥0</span></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- 注意事項 -->
+    <div class="qs-notes">
+      <div class="h">■ 治療内容とお支払いに関するご案内</div>
+      <ul>
+        <li>本見積書に記載の金額はすべて<b>自由診療・税込</b>金額です。</li>
+        <li>暫間上部構造は、最終補綴装置装着までの<b>治癒期間中に必要な仮歯</b>です。</li>
+        <li>治療計画は診断結果により変更となる場合があります。その際は改めてご説明・再見積りいたします。</li>
+        <li>本見積書の<b>有効期限は発行日より3ヶ月間</b>です。</li>
+        <li id="p-warranty-note" style="display:none"><b style="color:#b00">【保証なしプラン】</b>本プランには保証が付帯しません。インプラント体・上部構造の脱離・破損等が生じた場合、再治療費用は<b>全額自己負担</b>となります。</li>
+      </ul>
+    </div>
+
+
+
+    <!-- 支払い方法 -->
+    <div class="qs-payment">
+      <div class="box">
+        <div class="h">お支払い方法</div>
+        <span id="p-payment-methods">現金・クレジットカード各種／デンタルローン(最大84回)対応</span>
+      </div>
+      <div class="box">
+        <div class="h">医療費控除</div>
+        <span id="p-tax-note">インプラント治療は医療費控除の対象となります。領収書は大切に保管ください。</span>
+      </div>
+    </div>
+
+    <!-- 署名欄 (担当医サイン ／ 患者様同意サイン の2欄) -->
+    <div class="qs-sign">
+      <div class="box">
+        <div class="lbl">担当医サイン</div>
+        <div class="line" id="p-counselor-line">Doctor</div>
+      </div>
+      <div class="box">
+        <div class="lbl">患者様同意サイン</div>
+        <div class="line">Patient / Date</div>
+      </div>
+    </div>
+
+    <!-- 医院情報ブロックは削除。発行院はタイトル横に表示。 -->
+  </div>
+</div>
+
+<script>
+  // ==================================================================
+  // ★ 設定エリア (変更時はここだけ書き換えればOK)
+  // ==================================================================
+
+  // デンタルローン金利 (％) — 改定時にここを書き換える
+  const LOAN_RATE = 3.9;
+
+  // 支払方法の記載文言
+  const PAYMENT_METHODS = '現金・クレジットカード各種／キャッシュレス決済各種／デンタルローン(最大84回)対応';
+
+  // 医療費控除の案内文
+  const TAX_NOTE = 'インプラント治療は医療費控除の対象となります。領収書は大切に保管ください。';
+
+  // 院マスタ (3院・院名のみ。住所・ロゴは記載しない方針)
+  const CLINICS = {
+    akihabara:  { name: '秋葉原院'   },
+    suehirocho: { name: '末広町院'   },
+    kodenmacho: { name: '小伝馬町院' },
+  };
+
+  // LocalStorage キー
+  const STORAGE = 'implant_master_csv_v7';
+  const STORAGE_CLINIC = 'implant_selected_clinic_v1';
+  const STORAGE_COUNSELOR = 'implant_selected_counselor_v1';
+  // ==================================================================
+
+  // ---- 日付・見積番号 ----
+  const today = new Date();
+  const ymd = today.getFullYear()+'年'+(today.getMonth()+1)+'月'+today.getDate()+'日';
+  const expiry = new Date(today); expiry.setMonth(expiry.getMonth()+3);
+  const ymdExpiry = expiry.getFullYear()+'年'+(expiry.getMonth()+1)+'月'+expiry.getDate()+'日';
+  // 見積番号は院コード込み。院切替時に再生成する。
+  function makeQuoteNo(clinicKey){
+    const codeMap = { akihabara:'AKB', suehirocho:'SEH', kodenmacho:'KDM' };
+    const code = codeMap[clinicKey] || 'IMP';
+    return code+'-'+today.getFullYear()+String(today.getMonth()+1).padStart(2,'0')
+      +String(today.getDate()).padStart(2,'0')+'-'
+      +String(Math.floor(Math.random()*900+100));
+  }
+  let qno = makeQuoteNo(localStorage.getItem(STORAGE_CLINIC) || 'akihabara');
+
+  document.getElementById('today').textContent = ymd;
+  document.getElementById('quote-no').textContent = qno;
+  document.getElementById('p-today').textContent = ymd;
+  document.getElementById('p-expiry').textContent = ymdExpiry;
+  document.getElementById('p-quote-no').textContent = qno;
+
+  // 院プルダウン初期化＋切替時に見積番号を再生成
+  (function initClinic(){
+    const sel = document.getElementById('clinic-select');
+    const saved = localStorage.getItem(STORAGE_CLINIC);
+    if(saved && CLINICS[saved]) sel.value = saved;
+    sel.addEventListener('change', () => {
+      localStorage.setItem(STORAGE_CLINIC, sel.value);
+      qno = makeQuoteNo(sel.value);
+      document.getElementById('quote-no').textContent = qno;
+      document.getElementById('p-quote-no').textContent = qno;
+    });
+    // カウンセラー名の記憶
+    const cn = document.getElementById('counselor-name');
+    const savedCn = localStorage.getItem(STORAGE_COUNSELOR);
+    if(savedCn) cn.value = savedCn;
+    cn.addEventListener('change', () => localStorage.setItem(STORAGE_COUNSELOR, cn.value));
+  })();
+
+  // ---- ローン月額計算 (元利均等・年利%) ----
+  // r=0のときは単純割り。100円単位で切り上げ表示。
+  function calcMonthly(principal, months, ratePct){
+    if(!principal || !months) return 0;
+    const r = Number(ratePct) || 0;
+    if(r <= 0) return Math.ceil(principal / months / 100) * 100;
+    const mr = r / 100 / 12;
+    const m = principal * mr * Math.pow(1+mr, months) / (Math.pow(1+mr, months) - 1);
+    return Math.ceil(m / 100) * 100;
+  }
+  function getLoanRate(){
+    return LOAN_RATE;
+  }
+  // 旧バージョンのキャッシュがあれば破棄
+  ['implant_master_csv_v1','implant_master_csv_v2','implant_master_csv_v3',
+   'implant_master_csv_v4','implant_master_csv_v5','implant_master_csv_v6']
+    .forEach(k => localStorage.removeItem(k));
+
+  // ---- CSVパーサ ----
+  function parseCSV(text){
+    text = text.replace(/^\uFEFF/, '');
+    const rows = []; let cur=[], field='', inQ=false;
+    for(let i=0; i<text.length; i++){
+      const c = text[i];
+      if(inQ){
+        if(c === '"'){ if(text[i+1]==='"'){field+='"';i++;} else inQ=false; }
+        else field += c;
+      } else {
+        if(c==='"') inQ=true;
+        else if(c===','){ cur.push(field); field=''; }
+        else if(c==='\r'){}
+        else if(c==='\n'){ cur.push(field); rows.push(cur); cur=[]; field=''; }
+        else field += c;
+      }
+    }
+    if(field.length || cur.length){ cur.push(field); rows.push(cur); }
+    return rows.filter(r => r.some(v => v && v.trim().length));
+  }
+
+  function renderFromCSV(text){
+    const rows = parseCSV(text);
+    if(rows.length < 2){ alert('CSVにデータがありません'); return; }
+    const header = rows[0].map(s=>s.trim());
+    const idx = {
+      cat: header.indexOf('カテゴリ'),
+      name: header.indexOf('表記名'),
+      price: header.findIndex(h=>h.startsWith('税込金額')),
+      unit: header.indexOf('単位'),
+      type: header.indexOf('種別'),
+      note: header.indexOf('備考'),
+    };
+    if(idx.cat<0 || idx.name<0 || idx.price<0 || idx.type<0){
+      alert('CSVの列が不正です'); return;
+    }
+
+    const cats = new Map();
+    for(let i=1; i<rows.length; i++){
+      const r = rows[i];
+      const cat = (r[idx.cat]||'').trim();
+      const name = (r[idx.name]||'').trim();
+      if(!cat || !name) continue;
+      const item = {
+        name,
+        price: Number(String(r[idx.price]||'0').replace(/[^\d.-]/g,''))||0,
+        unit: (r[idx.unit]||'').trim(),
+        type: (r[idx.type]||'fixed').trim(),
+      };
+      if(!cats.has(cat)) cats.set(cat, []);
+      cats.get(cat).push(item);
+    }
+
+    const container = document.getElementById('categories');
+    container.innerHTML = '';
+
+    for(const [cat, items] of cats){
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.category = cat;
+      const h2 = document.createElement('h2');
+      h2.textContent = cat;
+      card.appendChild(h2);
+
+      items.forEach(it => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.dataset.item = it.name;
+        row.dataset.price = it.price;
+        row.dataset.unit = it.unit;
+        row.dataset.type = it.type;
+
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        if(it.type === 'radio_2ndsurg' || it.type === 'radio_sedation' || it.type === 'radio_warranty'){
+          input.type = 'radio';
+          input.name = it.type;
+        } else {
+          input.type = 'checkbox';
+        }
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(' '+it.name));
+
+        if(it.type === 'per_unit'){
+          const qtyLabel = document.createElement('span');
+          qtyLabel.style.marginLeft = '8px';
+          qtyLabel.textContent = ' × ';
+          const qty = document.createElement('input');
+          qty.type='number'; qty.className='qty';
+          qty.min='0'; qty.max='20'; qty.value='1';
+          const u = document.createElement('span');
+          u.textContent = ' '+(it.unit||'');
+          qtyLabel.appendChild(qty);
+          qtyLabel.appendChild(u);
+          label.appendChild(qtyLabel);
+        }
+        row.appendChild(label);
+
+        const p = document.createElement('span');
+        p.className = 'price';
+        if(it.type === 'per_unit') p.textContent = '¥'+it.price.toLocaleString()+' / '+(it.unit||'');
+        else p.textContent = '¥'+it.price.toLocaleString();
+        row.appendChild(p);
+
+        card.appendChild(row);
+      });
+      container.appendChild(card);
+    }
+
+    document.querySelectorAll('.row input[type=checkbox],.row input[type=radio],.row input.qty')
+      .forEach(el => {
+        el.addEventListener('change', recalc);
+        el.addEventListener('input', recalc);
+      });
+
+    // 保証ラジオは「同じものをもう一度クリックで解除」できるようにする
+    document.querySelectorAll('.row input[type=radio][name="radio_warranty"]')
+      .forEach(el => {
+        el.addEventListener('click', function(e){
+          if(this.dataset.wasChecked === '1'){
+            this.checked = false;
+            this.dataset.wasChecked = '0';
+            recalc();
+          } else {
+            document.querySelectorAll('input[type=radio][name="radio_warranty"]')
+              .forEach(r => r.dataset.wasChecked = '0');
+            this.dataset.wasChecked = '1';
+          }
+        });
+      });
+
+    document.getElementById('loader-status').textContent =
+      '料金表: 読込済み (' + (rows.length-1) + '項目)';
+    recalc();
+  }
+
+  function recalc(){
+    let subtotal = 0;
+    const items = [];
+    document.querySelectorAll('.card[data-category]').forEach(card => {
+      card.querySelectorAll('.row').forEach(row => {
+        const inp = row.querySelector('input[type=checkbox],input[type=radio]');
+        if(!inp || !inp.checked){ row.classList.remove('hit'); return; }
+        row.classList.add('hit');
+        const name = row.dataset.item;
+        const price = Number(row.dataset.price)||0;
+        const unit = row.dataset.unit || '';
+        const qtyEl = row.querySelector('.qty');
+        const qty = qtyEl? Number(qtyEl.value)||0 : 1;
+        const line = price * qty;
+        subtotal += line;
+        items.push({
+          cat: card.dataset.category,
+          name, unit, qty, price, line,
+          displayName: name + (qtyEl? ' ×'+qty : ''),
+          displayTotal: '¥'+line.toLocaleString()
+        });
+      });
+    });
+
+    const ul = document.getElementById('breakdown');
+    if(items.length === 0){
+      ul.innerHTML = '<li style="color:#999">項目を選択してください</li>';
+    } else {
+      ul.innerHTML = items.map(i =>
+        `<li><span class="name">${escapeHtml(i.displayName)}</span><span class="val">${escapeHtml(i.displayTotal)}</span></li>`
+      ).join('');
+    }
+    document.getElementById('grand-total').textContent = '¥'+subtotal.toLocaleString();
+    const monthly = document.getElementById('monthly-hint');
+    if(subtotal > 0){
+      const r = getLoanRate();
+      const m = calcMonthly(subtotal, 36, r);
+      monthly.textContent = '目安: 36回払い(金利'+r+'%)で月々 ¥'+m.toLocaleString()+'〜';
+    } else monthly.textContent = '';
+
+    // 見積書プレビュー用データを保持
+    window.__quoteItems = items;
+    window.__quoteSubtotal = subtotal;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function resetAll(){
+    if(!confirm('入力内容をリセットしますか?')) return;
+    document.querySelectorAll('input[type=checkbox],input[type=radio]').forEach(i=>i.checked=false);
+    document.querySelectorAll('input.qty').forEach(i=>i.value=1);
+    // 患者情報のみリセット (院・カウンセラーは残す)
+    ['patient-name','patient-chart','patient-tooth'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value='';
+    });
+    document.querySelectorAll('.btn-set').forEach(b=>b.classList.remove('active'));
+    window.__currentPlan = null;
+    const warnEl = document.getElementById('plan1-warning');
+    if(warnEl) warnEl.style.display = 'none';
+    recalc();
+  }
+
+  // ---- セットリスト (患者提示用推奨プラン) ----
+  const SETS = {
+    S1: {
+      no: 1,
+      name: 'ライト+α',
+      note: 'ガイド標準・保証なし・2次手術は任意',
+      items: [
+        ['精密検査代'],
+        ['1次手術'],
+        ['フィクスチャー: ライト', 1],
+        ['スタンダードアバットメント', 1],
+        ['暫間上部構造', 1],
+        ['最終上部構造 ジルコニア', 1],
+        ['ガイデッドサージェリー'],
+      ]
+    },
+    S2: {
+      no: 2,
+      name: 'スタンダード',
+      note: 'ガイド標準・2年保証標準・2次手術は任意',
+      items: [
+        ['精密検査代'],
+        ['1次手術'],
+        ['フィクスチャー: スタンダード', 1],
+        ['スタンダードアバットメント', 1],
+        ['暫間上部構造', 1],
+        ['最終上部構造 ジルコニア', 1],
+        ['ガイデッドサージェリー'],
+        ['２年保証（スタンダード・プレミアム選択）', 1],
+      ]
+    },
+    S3: {
+      no: 3,
+      name: 'プレミアム',
+      note: '長期安定性・審美性 + ガイド + 2年保証標準 (10年に切替可)',
+      items: [
+        ['精密検査代'],
+        ['1次手術'],
+        ['フィクスチャー: プレミアム', 1],
+        ['マルチアバットメント', 1],
+        ['暫間上部構造', 1],
+        ['最終上部構造 ジルコニアセラミック', 1],
+        ['ガイデッドサージェリー'],
+        ['２年保証（スタンダード・プレミアム選択）', 1],
+      ]
+    }
+  };
+
+  function applySet(key){
+    const s = SETS[key]; if(!s) return;
+    if(document.querySelectorAll('.card[data-category]').length === 0){
+      alert('先に「料金表を読込」でCSVを読み込んでください'); return;
+    }
+    // 現在のプラン番号を記録 (見積書PDFに印字するため)
+    // hasWarranty: 保証あり(Plan2/Plan3)は true / 保証なし(Plan1)は false
+    window.__currentPlan = { no: s.no, name: s.name, hasWarranty: (key !== 'S1') };
+    // Plan1警告UIの表示切替
+    const warnEl = document.getElementById('plan1-warning');
+    if(warnEl) warnEl.style.display = (key === 'S1') ? 'block' : 'none';
+    // 全解除
+    document.querySelectorAll('input[type=checkbox],input[type=radio]').forEach(i=>i.checked=false);
+    document.querySelectorAll('input.qty').forEach(i=>i.value=1);
+    // 項目チェック + 数量
+    const misses = [];
+    s.items.forEach(([name, qty]) => {
+      const rows = document.querySelectorAll('.row');
+      let hit = null;
+      rows.forEach(r => { if(r.dataset.item === name) hit = r; });
+      if(!hit){ misses.push(name); return; }
+      const inp = hit.querySelector('input[type=checkbox],input[type=radio]');
+      if(inp) inp.checked = true;
+      const qtyEl = hit.querySelector('.qty');
+      if(qtyEl && qty != null) qtyEl.value = qty;
+    });
+    recalc();
+    // ボタンのアクティブ表示切替
+    document.querySelectorAll('.btn-set').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector('.btn-set-'+key.slice(1));
+    if(btn) btn.classList.add('active');
+    // ステータス表示
+    if(misses.length){
+      alert('セット'+s.name+' 適用中に未マッチ項目あり:\n'+misses.join('\n'));
+    } else {
+      const st = document.getElementById('loader-status');
+      const orig = st.textContent;
+      st.textContent = '★ '+s.name+' 適用: '+s.note;
+      st.style.color = '#0b4f6c';
+      st.style.fontWeight = 'bold';
+      setTimeout(() => {
+        st.textContent = orig;
+        st.style.color = '';
+        st.style.fontWeight = '';
+      }, 4000);
+    }
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  // ---- 見積書プレビュー切替 ----
+  function openPreview(){
+    const items = window.__quoteItems || [];
+    if(items.length === 0){
+      alert('項目が選択されていません'); return;
+    }
+
+    // 密度モードを項目数で自動判定
+    const n = items.length;
+    let density = 'normal';
+    if(n <= 7) density = 'spacious';
+    else if(n >= 12) density = 'compact';
+    document.getElementById('quote-sheet').setAttribute('data-density', density);
+    // プランバッジ反映
+    const plan = window.__currentPlan;
+    const badge = document.getElementById('p-plan-badge');
+    if(plan){
+      document.getElementById('p-plan-no').textContent = plan.no;
+      document.getElementById('p-plan-name').textContent = plan.name;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+    // 宛先反映
+    const pn = document.getElementById('patient-name').value.trim() || '　　　　　　　';
+    const pc = document.getElementById('patient-chart').value.trim() || '－';
+    const pt = document.getElementById('patient-tooth').value.trim() || '－';
+    document.getElementById('p-patient-name').textContent = pn;
+    document.getElementById('p-patient-chart').textContent = pc;
+    document.getElementById('p-patient-tooth').textContent = pt;
+
+    // カテゴリ短縮名
+    const catShort = {
+      '1.検査診断':'検査', '2.手術':'手術', '3.フィクスチャー':'FIX',
+      '4.アバットメント':'アバットメント', '5.上部構造':'上部',
+      '6.オプション':'オプション', '7.外科オプション':'外科'
+    };
+
+    // 明細表を組み立て
+    const tbody = document.getElementById('p-tbody');
+    tbody.innerHTML = items.map(i => {
+      const short = catShort[i.cat] || i.cat.replace(/^\d+\./,'');
+      const qty = i.unit ? (i.qty + ' ' + i.unit) : '1';
+      return `<tr>
+        <td class="cat">${escapeHtml(short)}</td>
+        <td class="name">${escapeHtml(i.name)}</td>
+        <td class="qty">${escapeHtml(qty)}</td>
+        <td class="unit-price">¥${i.price.toLocaleString()}</td>
+        <td class="subtotal">¥${i.line.toLocaleString()}</td>
+      </tr>`;
+    }).join('');
+
+    const subtotal = window.__quoteSubtotal || 0;
+    document.getElementById('p-subtotal').textContent = '¥'+subtotal.toLocaleString();
+    document.getElementById('p-grand').textContent = '¥'+subtotal.toLocaleString();
+    document.getElementById('p-total').textContent = subtotal.toLocaleString();
+
+    if(subtotal > 0){
+      const r = getLoanRate();
+      const m36 = calcMonthly(subtotal, 36, r);
+      const m60 = calcMonthly(subtotal, 60, r);
+      const m84 = calcMonthly(subtotal, 84, r);
+      document.getElementById('p-monthly').innerHTML =
+        `月々目安 (デンタルローン金利${r}%): 36回¥${m36.toLocaleString()} / 60回¥${m60.toLocaleString()} / 84回¥${m84.toLocaleString()}`;
+    }
+
+    // 院情報反映 (院名のみ・住所は載せない)
+    const clinicKey = document.getElementById('clinic-select').value;
+    const clinic = CLINICS[clinicKey] || CLINICS.akihabara;
+    document.getElementById('p-clinic-name').textContent = clinic.name;
+
+    // カウンセラー名反映
+    const counselor = document.getElementById('counselor-name').value.trim();
+    document.getElementById('p-counselor-line').textContent = counselor || 'TC / Doctor';
+
+    // 支払方法・医療費控除は定数から反映 (HTML冒頭で定義)
+    document.getElementById('p-payment-methods').innerHTML =
+      escapeHtml(PAYMENT_METHODS).replace(/／/g,'<br>');
+    document.getElementById('p-tax-note').innerHTML = escapeHtml(TAX_NOTE);
+
+    // 保証なし注意事項の表示切替 (Plan1選択時のみ表示)
+    const warrantyNote = document.getElementById('p-warranty-note');
+    if(plan && plan.hasWarranty === false){
+      warrantyNote.style.display = 'list-item';
+    } else {
+      warrantyNote.style.display = 'none';
+    }
+
+    document.getElementById('input-mode').style.display='none';
+    document.getElementById('preview-mode').style.display='block';
+    window.scrollTo(0,0);
+  }
+  function closePreview(){
+    document.getElementById('preview-mode').style.display='none';
+    document.getElementById('input-mode').style.display='block';
+  }
+
+  document.getElementById('csv-input').addEventListener('change', e => {
+    const f = e.target.files[0]; if(!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const text = rd.result;
+      try{ localStorage.setItem(STORAGE, text); renderFromCSV(text); }
+      catch(err){ alert('読込エラー: '+err.message); }
+    };
+    rd.readAsText(f, 'utf-8');
+  });
+
+  // ---- CSV自動読込 (同一URL配下のimplant_price_master.csvをfetch) ----
+  // 優先順位: (1)fetch成功 → (2)LocalStorageキャッシュ → (3)手動読込ボタン
+  async function autoLoadCSV(){
+    const status = document.getElementById('loader-status');
+    try{
+      // キャッシュバスター: URLに?v=YYYYMMDDHHをつけて日次で自動更新
+      // (ブラウザキャッシュに引きずられないようにする)
+      const bust = new Date().toISOString().slice(0,13).replace(/[-:T]/g,'');
+      const res = await fetch('implant_price_master.csv?v=' + bust);
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const text = await res.text();
+      if(text.indexOf('カテゴリ') === -1) throw new Error('CSV形式不正');
+      localStorage.setItem(STORAGE, text);
+      renderFromCSV(text);
+      if(status){
+        status.textContent = '料金表: サーバから自動読込済み';
+        status.style.color = '#0a7a3a';
+        setTimeout(() => { status.style.color = ''; }, 3000);
+      }
+      return true;
+    } catch(err){
+      // fetch失敗 → キャッシュフォールバック
+      const cached = localStorage.getItem(STORAGE);
+      if(cached && cached.indexOf('保証') !== -1){
+        try{
+          renderFromCSV(cached);
+          if(status){
+            status.textContent = '料金表: 前回キャッシュから読込 (自動更新失敗)';
+            status.style.color = '#b04a00';
+          }
+          return true;
+        } catch(e){}
+      }
+      // 全部失敗 → 手動読込を促す
+      if(status){
+        status.textContent = '料金表: 手動読込が必要 (右上ボタン)';
+        status.style.color = '#b00';
+      }
+      return false;
+    }
+  }
+
+  // 起動時に自動読込を試みる
+  autoLoadCSV();
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+</body>
+</html>
