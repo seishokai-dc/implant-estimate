@@ -96,20 +96,39 @@
   .btn-preview{background:#8a6d18;color:#fff}
   .btn-load{background:#f5deb3;color:#5a4a1a}
   .btn-reset{background:#eee;color:#333}
-  /* セットリスト用ボタン (縦並び) */
+  /* セットリスト用ボタン (2列×3行マトリクス) */
   .btn-set{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:10px 12px;border-radius:6px;
+    display:flex;justify-content:center;align-items:center;
+    padding:12px 6px;border-radius:6px;
     border:2px solid transparent;cursor:pointer;font-weight:bold;
-    transition:all .15s;text-align:left;
+    transition:all .15s;text-align:center;font-size:12.5px;
+    line-height:1.25;font-family:inherit;
   }
-  .btn-set .set-name{font-size:13px}
-  .btn-set .set-price{font-size:13px;font-variant-numeric:tabular-nums}
   .btn-set-1{background:#f0f7f9;color:#0b4f6c;border-color:#0b4f6c}
   .btn-set-2{background:#fff5e0;color:#8a6d18;border-color:#c9a545}
   .btn-set-3{background:linear-gradient(135deg,#2d3e50,#0b4f6c);color:#fff;border-color:#0b4f6c}
   .btn-set:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.15)}
   .btn-set.active{outline:3px solid #c9a545;outline-offset:2px}
+
+  /* セットリストのマトリクス (行ラベル 70px + 前歯 + 臼歯) */
+  .set-matrix-header,
+  .set-matrix-row{
+    display:grid;
+    grid-template-columns:70px 1fr 1fr;
+    gap:6px;align-items:center;
+    margin-bottom:6px;
+  }
+  .set-matrix-header{margin-bottom:4px}
+  .set-col-lbl{
+    text-align:center;font-size:11.5px;font-weight:bold;color:var(--accent);
+    padding:4px;background:#f0f4f6;border-radius:4px;
+  }
+  .set-row-lbl{
+    font-size:11px;color:var(--sub);text-align:right;padding-right:4px;
+    line-height:1.25;
+  }
+  .set-row-lbl .rn{font-weight:bold;color:#333;font-size:11.5px}
+  .set-row-lbl .rs{font-size:10px;opacity:.75}
   .patient-input{width:100%;padding:6px 8px;margin:3px 0;
     border:1px solid var(--line);border-radius:4px;font-size:13px}
   .warn{font-size:11px;color:#b00;margin-top:6px}
@@ -359,14 +378,14 @@
       margin:0mm;
       padding:0mm;
     }
-    /* 全体をリセット (Safari対策で高さ290mmまで縮小)
+    /* 全体をリセット (Safari対策で高さ調整)
        Safariは@page margin:0を無視して余白を入れることがあるため
        コンテンツ側で明確に小さく確保する */
     html,body{
       background:#fff !important;
       padding:0 !important; margin:0 !important;
-      width:210mm !important; height:290mm !important;
-      max-height:290mm !important;
+      width:210mm !important; height:295mm !important;
+      max-height:295mm !important;
       overflow:hidden !important;
       -webkit-print-color-adjust:exact !important;
       print-color-adjust:exact !important;
@@ -377,22 +396,22 @@
     #preview-mode{
       display:block !important; max-width:none !important;
       margin:0 !important; padding:0 !important;
-      width:210mm !important; height:290mm !important;
-      max-height:290mm !important;
+      width:210mm !important; height:295mm !important;
+      max-height:295mm !important;
       overflow:hidden !important;
       page-break-after:avoid !important;
       break-after:avoid !important;
       position:relative !important;
     }
     /* 見積書シート本体 — A4 1枚固定
-       Safari対策: height=290mm (297mmだと確実に溢れる)
-       Chromeなら余裕、Safariなら安全マージン内に収まる */
+       Safari対策: height=285mm (Safariの安全マージンを避ける)
+       上下に印刷用の追加マージンを入れて、上部の切れを防ぐ */
     .quote-sheet{
       border:none !important; box-shadow:none !important;
-      margin:0 !important;
-      width:210mm !important; height:290mm !important;
+      margin:6mm 0 0 0 !important;
+      width:210mm !important; height:285mm !important;
       min-height:0 !important;
-      max-height:290mm !important;
+      max-height:285mm !important;
       overflow:hidden !important;
       transform:none !important;
       transform-origin:top left !important;
@@ -487,26 +506,45 @@
         <button class="btn-reset" onclick="resetAll()">リセット</button>
       </div>
 
-      <!-- ===== セットリスト (患者提示用の推奨プラン) ===== -->
+      <!-- ===== セットリスト (患者提示用の推奨プラン・2列×3行) ===== -->
       <div style="margin-top:12px;padding-top:8px;border-top:2px solid var(--accent)">
         <div style="font-size:12px;color:var(--accent);text-align:center;margin-bottom:6px;font-weight:bold">
           ◆ セットリスト (1本埋入・推奨プラン)
         </div>
-        <div class="actions" style="margin-top:4px;flex-direction:column;gap:4px">
-          <button class="btn-set btn-set-1" onclick="applySet('S1')">
-            <span class="set-name">ライト+α<span style="font-size:10px;font-weight:normal;opacity:.75">　ガイド標準/保証なし</span></span>
-            <span class="set-price">¥429,000</span>
-          </button>
-          <button class="btn-set btn-set-2" onclick="applySet('S2')">
-            <span class="set-name">スタンダード<span style="font-size:10px;font-weight:normal;opacity:.75">　ガイド標準/2年保証</span></span>
-            <span class="set-price">¥484,000</span>
-          </button>
-          <button class="btn-set btn-set-3" onclick="applySet('S3')">
-            <span class="set-name">プレミアム<span style="font-size:10px;font-weight:normal;opacity:.85">　ガイド標準/2年保証</span></span>
-            <span class="set-price">¥602,800</span>
-          </button>
+        <!-- 列ヘッダー (前歯/臼歯) -->
+        <div class="set-matrix-header">
+          <div class="set-row-lbl"></div>
+          <div class="set-col-lbl">前歯</div>
+          <div class="set-col-lbl">臼歯</div>
         </div>
-        <div style="font-size:10px;color:var(--sub);text-align:center;margin-top:4px;line-height:1.4">
+        <!-- ライト+α行 -->
+        <div class="set-matrix-row">
+          <div class="set-row-lbl">
+            <div class="rn">ライト+α</div>
+            <div class="rs">保証なし</div>
+          </div>
+          <button class="btn-set btn-set-1" data-set-key="A1" onclick="applySet('A1')">前歯ライト</button>
+          <button class="btn-set btn-set-1" data-set-key="P1" onclick="applySet('P1')">臼歯ライト</button>
+        </div>
+        <!-- スタンダード行 -->
+        <div class="set-matrix-row">
+          <div class="set-row-lbl">
+            <div class="rn">スタンダード</div>
+            <div class="rs">2年保証</div>
+          </div>
+          <button class="btn-set btn-set-2" data-set-key="A2" onclick="applySet('A2')">前歯スタンダード</button>
+          <button class="btn-set btn-set-2" data-set-key="P2" onclick="applySet('P2')">臼歯スタンダード</button>
+        </div>
+        <!-- プレミアム行 -->
+        <div class="set-matrix-row">
+          <div class="set-row-lbl">
+            <div class="rn">プレミアム</div>
+            <div class="rs">2年保証</div>
+          </div>
+          <button class="btn-set btn-set-3" data-set-key="A3" onclick="applySet('A3')">前歯プレミアム</button>
+          <button class="btn-set btn-set-3" data-set-key="P3" onclick="applySet('P3')">臼歯プレミアム</button>
+        </div>
+        <div style="font-size:10px;color:var(--sub);text-align:center;margin-top:6px;line-height:1.4">
           2次手術・10年保証・鎮静などは必要に応じて個別選択<br>
           セット適用後の個別調整OK
         </div>
@@ -933,12 +971,56 @@
     recalc();
   }
 
-  // ---- セットリスト (患者提示用推奨プラン) ----
+  // ---- セットリスト (患者提示用推奨プラン・6パターン)
+  //      前歯 = 審美重視 (カスタムアバット + ジルコニアセラミック)
+  //      臼歯 = 機能重視 (スタンダード or マルチ + ジルコニア)
   const SETS = {
-    S1: {
-      no: 1,
-      name: 'ライト+α',
-      note: 'ガイド標準・保証なし・2次手術は任意',
+    // 前歯 (Anterior)
+    A1: {
+      no: 1, name: 'ライト+α', position: '前歯',
+      note: '前歯用・審美重視・保証なし',
+      items: [
+        ['精密検査代'],
+        ['1次手術'],
+        ['フィクスチャー: ライト', 1],
+        ['カスタムアバットメント', 1],
+        ['暫間上部構造', 1],
+        ['最終上部構造 ジルコニアセラミック', 1],
+        ['ガイデッドサージェリー'],
+      ]
+    },
+    A2: {
+      no: 2, name: 'スタンダード', position: '前歯',
+      note: '前歯用・審美重視・2年保証標準',
+      items: [
+        ['精密検査代'],
+        ['1次手術'],
+        ['フィクスチャー: スタンダード', 1],
+        ['カスタムアバットメント', 1],
+        ['暫間上部構造', 1],
+        ['最終上部構造 ジルコニアセラミック', 1],
+        ['ガイデッドサージェリー'],
+        ['２年保証（スタンダード・プレミアム選択）', 1],
+      ]
+    },
+    A3: {
+      no: 3, name: 'プレミアム', position: '前歯',
+      note: '前歯用・長期安定性+審美・2年保証標準 (10年に切替可)',
+      items: [
+        ['精密検査代'],
+        ['1次手術'],
+        ['フィクスチャー: プレミアム', 1],
+        ['カスタムアバットメント', 1],
+        ['暫間上部構造', 1],
+        ['最終上部構造 ジルコニアセラミック', 1],
+        ['ガイデッドサージェリー'],
+        ['２年保証（スタンダード・プレミアム選択）', 1],
+      ]
+    },
+    // 臼歯 (Posterior)
+    P1: {
+      no: 1, name: 'ライト+α', position: '臼歯',
+      note: '臼歯用・機能重視・保証なし',
       items: [
         ['精密検査代'],
         ['1次手術'],
@@ -949,10 +1031,9 @@
         ['ガイデッドサージェリー'],
       ]
     },
-    S2: {
-      no: 2,
-      name: 'スタンダード',
-      note: 'ガイド標準・2年保証標準・2次手術は任意',
+    P2: {
+      no: 2, name: 'スタンダード', position: '臼歯',
+      note: '臼歯用・機能重視・2年保証標準',
       items: [
         ['精密検査代'],
         ['1次手術'],
@@ -964,17 +1045,16 @@
         ['２年保証（スタンダード・プレミアム選択）', 1],
       ]
     },
-    S3: {
-      no: 3,
-      name: 'プレミアム',
-      note: '長期安定性・審美性 + ガイド + 2年保証標準 (10年に切替可)',
+    P3: {
+      no: 3, name: 'プレミアム', position: '臼歯',
+      note: '臼歯用・機能重視+マルチアバット・2年保証標準',
       items: [
         ['精密検査代'],
         ['1次手術'],
         ['フィクスチャー: プレミアム', 1],
         ['マルチアバットメント', 1],
         ['暫間上部構造', 1],
-        ['最終上部構造 ジルコニアセラミック', 1],
+        ['最終上部構造 ジルコニア', 1],
         ['ガイデッドサージェリー'],
         ['２年保証（スタンダード・プレミアム選択）', 1],
       ]
@@ -987,11 +1067,11 @@
       alert('先に「料金表を読込」でCSVを読み込んでください'); return;
     }
     // 現在のプラン番号を記録 (見積書PDFに印字するため)
-    // hasWarranty: 保証あり(Plan2/Plan3)は true / 保証なし(Plan1)は false
-    window.__currentPlan = { no: s.no, name: s.name, hasWarranty: (key !== 'S1') };
-    // Plan1警告UIの表示切替
+    // hasWarranty: 保証あり(no=2/3)は true / 保証なし(no=1)は false
+    window.__currentPlan = { no: s.no, name: s.name, hasWarranty: (s.no !== 1) };
+    // 保証なしプラン警告UIの表示切替 (no=1 = ライト+α系のみ表示)
     const warnEl = document.getElementById('plan1-warning');
-    if(warnEl) warnEl.style.display = (key === 'S1') ? 'block' : 'none';
+    if(warnEl) warnEl.style.display = (s.no === 1) ? 'block' : 'none';
     // 全解除
     document.querySelectorAll('input[type=checkbox],input[type=radio]').forEach(i=>i.checked=false);
     document.querySelectorAll('input.qty').forEach(i=>i.value=1);
@@ -1008,9 +1088,9 @@
       if(qtyEl && qty != null) qtyEl.value = qty;
     });
     recalc();
-    // ボタンのアクティブ表示切替
+    // ボタンのアクティブ表示切替 (data-set-keyで正確に一致するボタンだけactive)
     document.querySelectorAll('.btn-set').forEach(b => b.classList.remove('active'));
-    const btn = document.querySelector('.btn-set-'+key.slice(1));
+    const btn = document.querySelector('.btn-set[data-set-key="'+key+'"]');
     if(btn) btn.classList.add('active');
     // ステータス表示
     if(misses.length){
@@ -1112,8 +1192,11 @@
 
     // 保証なし注意事項の表示切替 (Plan1選択時のみ表示)
     const warrantyNote = document.getElementById('p-warranty-note');
-    const hasAnyWarranty = items.some(i => i.cat === '8.保証');
-    warrantyNote.style.display = hasAnyWarranty ? 'none' : 'list-item';
+    if(plan && plan.hasWarranty === false){
+      warrantyNote.style.display = 'list-item';
+    } else {
+      warrantyNote.style.display = 'none';
+    }
 
     document.getElementById('input-mode').style.display='none';
     document.getElementById('preview-mode').style.display='block';
@@ -1142,7 +1225,7 @@
     try{
       // キャッシュバスター: URLに?v=YYYYMMDDHHをつけて日次で自動更新
       // (ブラウザキャッシュに引きずられないようにする)
-      const bust = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
+      const bust = new Date().toISOString().slice(0,13).replace(/[-:T]/g,'');
       const res = await fetch('implant_price_master.csv?v=' + bust);
       if(!res.ok) throw new Error('HTTP '+res.status);
       const text = await res.text();
@@ -1181,6 +1264,6 @@
   autoLoadCSV();
 </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 </body>
 </html>
