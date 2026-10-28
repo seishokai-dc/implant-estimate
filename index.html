@@ -603,7 +603,7 @@
     <div class="qs-to">
       <div class="to-name"><span id="p-patient-name">　　　　　　　</span></div>
       <div class="to-meta">
-        カルテ番号: <span id="p-patient-chart">－</span>　／　
+        カルテ番号: <span id="p-patient-chart">－</span>　／
         対象部位: <span id="p-patient-tooth">－</span>
       </div>
     </div>
@@ -709,7 +709,8 @@
   };
 
   // LocalStorage キー
-  const STORAGE = 'implant_master_csv_v7';
+  // v8: 全顎(ALL-ON-X)追加に伴い更新。古いキャッシュを使わないようにする
+  const STORAGE = 'implant_master_csv_v8';
   const STORAGE_CLINIC = 'implant_selected_clinic_v1';
   const STORAGE_COUNSELOR = 'implant_selected_counselor_v1';
   // ==================================================================
@@ -768,12 +769,13 @@
   }
   // 旧バージョンのキャッシュがあれば破棄
   ['implant_master_csv_v1','implant_master_csv_v2','implant_master_csv_v3',
-   'implant_master_csv_v4','implant_master_csv_v5','implant_master_csv_v6']
+   'implant_master_csv_v4','implant_master_csv_v5','implant_master_csv_v6',
+   'implant_master_csv_v7']
     .forEach(k => localStorage.removeItem(k));
 
   // ---- CSVパーサ ----
   function parseCSV(text){
-    text = text.replace(/^\uFEFF/, '');
+    text = text.replace(/^﻿/, '');
     const rows = []; let cur=[], field='', inQ=false;
     for(let i=0; i<text.length; i++){
       const c = text[i];
@@ -845,7 +847,8 @@
 
         const label = document.createElement('label');
         const input = document.createElement('input');
-        if(it.type === 'radio_2ndsurg' || it.type === 'radio_sedation' || it.type === 'radio_warranty'){
+        // 種別が radio_ で始まるものは同じ種別内で1つだけ選択 (例: radio_sedation, radio_allon_plan)
+        if(it.type.startsWith('radio_')){
           input.type = 'radio';
           input.name = it.type;
         } else {
@@ -886,8 +889,8 @@
         el.addEventListener('input', recalc);
       });
 
-    // 保証ラジオは「同じものをもう一度クリックで解除」できるようにする
-    document.querySelectorAll('.row input[type=radio][name="radio_warranty"]')
+    // ラジオ(1つ選択)は「同じものをもう一度クリックで解除」できるようにする
+    document.querySelectorAll('.row input[type=radio]')
       .forEach(el => {
         el.addEventListener('click', function(e){
           if(this.dataset.wasChecked === '1'){
@@ -895,7 +898,7 @@
             this.dataset.wasChecked = '0';
             recalc();
           } else {
-            document.querySelectorAll('input[type=radio][name="radio_warranty"]')
+            document.querySelectorAll('input[type=radio][name="'+this.name+'"]')
               .forEach(r => r.dataset.wasChecked = '0');
             this.dataset.wasChecked = '1';
           }
@@ -1223,10 +1226,9 @@
   async function autoLoadCSV(){
     const status = document.getElementById('loader-status');
     try{
-      // キャッシュバスター: URLに?v=YYYYMMDDHHをつけて日次で自動更新
-      // (ブラウザキャッシュに引きずられないようにする)
-      const bust = new Date().toISOString().slice(0,13).replace(/[-:T]/g,'');
-      const res = await fetch('implant_price_master.csv?v=' + bust);
+      // キャッシュバスター: 毎回異なるURLで取得し、常に最新のCSVを読む
+      const bust = Date.now();
+      const res = await fetch('implant_price_master.csv?v=' + bust, { cache: 'no-store' });
       if(!res.ok) throw new Error('HTTP '+res.status);
       const text = await res.text();
       if(text.indexOf('カテゴリ') === -1) throw new Error('CSV形式不正');
@@ -1263,7 +1265,5 @@
   // 起動時に自動読込を試みる
   autoLoadCSV();
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 </body>
 </html>
