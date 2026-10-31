@@ -829,6 +829,7 @@
     }
 
     const cats = new Map();
+    const extras = [];   // 種別 extra = インプラント以外の治療 (プルダウンから追加)
     for(let i=1; i<rows.length; i++){
       const r = rows[i];
       const cat = (r[idx.cat]||'').trim();
@@ -839,7 +840,10 @@
         price: Number(String(r[idx.price]||'0').replace(/[^\d.-]/g,''))||0,
         unit: (r[idx.unit]||'').trim(),
         type: (r[idx.type]||'fixed').trim(),
+        note: idx.note>=0 ? (r[idx.note]||'').trim() : '',
+        cat,
       };
+      if(item.type === 'extra'){ extras.push(item); continue; }
       if(!cats.has(cat)) cats.set(cat, []);
       cats.get(cat).push(item);
     }
@@ -875,7 +879,8 @@
         label.appendChild(input);
         label.appendChild(document.createTextNode(' '+it.name));
 
-        if(it.type === 'per_unit'){
+        // per_unit_lump: 入力画面では本数を入れるが、見積書には「1式」で合計額のみ表示
+        if(it.type === 'per_unit' || it.type === 'per_unit_lump'){
           const qtyLabel = document.createElement('span');
           qtyLabel.style.marginLeft = '8px';
           qtyLabel.textContent = ' × ';
@@ -893,7 +898,7 @@
 
         const p = document.createElement('span');
         p.className = 'price';
-        if(it.type === 'per_unit') p.textContent = '¥'+it.price.toLocaleString()+' / '+(it.unit||'');
+        if(it.type === 'per_unit' || it.type === 'per_unit_lump') p.textContent = '¥'+it.price.toLocaleString()+' / '+(it.unit||'');
         else p.textContent = '¥'+it.price.toLocaleString();
         row.appendChild(p);
 
@@ -901,6 +906,9 @@
       });
       container.appendChild(card);
     }
+
+    if(extras.length) container.appendChild(buildExtraCard(extras));
+    renderExtraList();
 
     document.querySelectorAll('.row input[type=checkbox],.row input[type=radio],.row input.qty')
       .forEach(el => {
@@ -929,6 +937,106 @@
     recalc();
   }
 
+  // ==================================================================
+  // その他の治療 (補綴・TEK・エンドなど) をプルダウンから追加する欄
+  // ==================================================================
+  window.__extraLines = window.__extraLines || [];
+
+  function buildExtraCard(extras){
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'extra-card';
+    card.innerHTML = '<h2>その他の治療を追加 (補綴・TEK・エンドなど)</h2>';
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;align-items:center';
+
+    const sel = document.createElement('select');
+    sel.className = 'patient-input';
+    sel.style.cssText = 'flex:1 1 260px;margin:0;cursor:pointer';
+    const ph = document.createElement('option');
+    ph.value = ''; ph.textContent = '— 治療項目を選択 —';
+    sel.appendChild(ph);
+    const groups = new Map();
+    extras.forEach((it, i) => {
+      if(!groups.has(it.cat)){
+        const og = document.createElement('optgroup');
+        og.label = it.cat.replace(/^\d+\./,'');
+        groups.set(it.cat, og); sel.appendChild(og);
+      }
+      const o = document.createElement('option');
+      o.value = i;
+      o.textContent = it.name + '  ¥' + it.price.toLocaleString() + (it.note && it.note.startsWith('〜') ? it.note : '');
+      groups.get(it.cat).appendChild(o);
+    });
+
+    const price = document.createElement('input');
+    price.type = 'number'; price.className = 'qty'; price.style.width = '100px';
+    price.placeholder = '単価'; price.step = '100';
+    const qty = document.createElement('input');
+    qty.type = 'number'; qty.className = 'qty'; qty.min = '1'; qty.step = '1'; qty.value = '1';
+    const unit = document.createElement('span');
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.textContent = '＋ 追加';
+    btn.className = 'btn-print'; btn.style.cssText = 'flex:0 0 auto;padding:8px 14px';
+    const note = document.createElement('div');
+    note.style.cssText = 'width:100%;font-size:11px;color:var(--sub)';
+
+    sel.addEventListener('change', () => {
+      const it = extras[sel.value];
+      if(!it){ price.value=''; unit.textContent=''; note.textContent=''; return; }
+      price.value = it.price; unit.textContent = it.unit;
+      note.textContent = it.note ? '備考: ' + it.note + (it.note.startsWith('〜') ? ' (単価は症例に応じて修正可)' : '') : '';
+    });
+    btn.addEventListener('click', () => {
+      const it = extras[sel.value];
+      if(!it){ alert('治療項目を選択してください'); return; }
+      const q = Number(qty.value)||0;
+      if(q <= 0){ alert('数量を入力してください'); return; }
+      window.__extraLines.push({
+        cat: it.cat, name: it.name, unit: it.unit,
+        price: Number(price.value)||0, qty: q
+      });
+      sel.value = ''; price.value = ''; qty.value = '1'; unit.textContent = ''; note.textContent = '';
+      renderExtraList(); recalc();
+    });
+
+    const l1 = document.createElement('span'); l1.textContent = '単価 ¥';
+    const l2 = document.createElement('span'); l2.textContent = ' × ';
+    wrap.append(sel, l1, price, l2, qty, unit, btn, note);
+    card.appendChild(wrap);
+
+    const list = document.createElement('div');
+    list.id = 'extra-list';
+    list.style.marginTop = '8px';
+    card.appendChild(list);
+    return card;
+  }
+
+  function renderExtraList(){
+    const list = document.getElementById('extra-list');
+    if(!list) return;
+    list.innerHTML = '';
+    window.__extraLines.forEach((e, i) => {
+      const row = document.createElement('div');
+      row.className = 'row hit';
+      const lbl = document.createElement('span');
+      lbl.style.flex = '1';
+      lbl.textContent = e.name + ' ×' + e.qty + (e.unit ? ' ' + e.unit : '');
+      const p = document.createElement('span');
+      p.className = 'price';
+      p.textContent = '¥' + e.price.toLocaleString() + ' → ¥' + (e.price*e.qty).toLocaleString();
+      const del = document.createElement('button');
+      del.type = 'button'; del.textContent = '削除';
+      del.className = 'btn-reset'; del.style.cssText = 'flex:0 0 auto;padding:4px 10px';
+      del.addEventListener('click', () => {
+        window.__extraLines.splice(i, 1); renderExtraList(); recalc();
+      });
+      row.append(lbl, p, del);
+      list.appendChild(row);
+    });
+  }
+
   function recalc(){
     let subtotal = 0;
     const items = [];
@@ -946,10 +1054,20 @@
         subtotal += line;
         items.push({
           cat: card.dataset.category,
-          name, unit, qty, price, line,
+          name, unit, qty, price, line, type: row.dataset.type,
           displayName: name + (qtyEl? ' ×'+qty : ''),
           displayTotal: '¥'+line.toLocaleString()
         });
+      });
+    });
+    // その他の治療 (プルダウン追加分)
+    (window.__extraLines || []).forEach(e => {
+      const line = e.price * e.qty;
+      subtotal += line;
+      items.push({
+        cat: e.cat, name: e.name, unit: e.unit, qty: e.qty, price: e.price, line, type: 'extra',
+        displayName: e.name + ' ×' + e.qty,
+        displayTotal: '¥'+line.toLocaleString()
       });
     });
 
@@ -988,6 +1106,8 @@
     });
     document.querySelectorAll('.btn-set').forEach(b=>b.classList.remove('active'));
     window.__currentPlan = null;
+    window.__extraLines = [];
+    renderExtraList();
     const warnEl = document.getElementById('plan1-warning');
     if(warnEl) warnEl.style.display = 'none';
     recalc();
@@ -1217,12 +1337,14 @@
     const tbody = document.getElementById('p-tbody');
     tbody.innerHTML = items.map(i => {
       const short = catShort[i.cat] || i.cat.replace(/^\d+\./,'');
-      const qty = i.unit ? (i.qty + ' ' + i.unit) : '1';
+      const lump = (i.type === 'per_unit_lump');
+      const qty = lump ? '1 式' : (i.unit ? (i.qty + ' ' + i.unit) : '1');
+      const unitPrice = lump ? i.line : i.price;
       return `<tr>
         <td class="cat">${escapeHtml(short)}</td>
         <td class="name">${escapeHtml(i.name)}</td>
         <td class="qty">${escapeHtml(qty)}</td>
-        <td class="unit-price">¥${i.price.toLocaleString()}</td>
+        <td class="unit-price">¥${unitPrice.toLocaleString()}</td>
         <td class="subtotal">¥${i.line.toLocaleString()}</td>
       </tr>`;
     }).join('');
